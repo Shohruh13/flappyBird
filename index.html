@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html> 
+    <meta chartset="UTF-8">
+  <head>
+    <title>Processing.JS inside Webpages: Template</title> 
+  </head>
+  <body>
+
+    <canvas id="mycanvas"></canvas> 
+  </body>
+ 
+  <script src="https://cdn.jsdelivr.net/processing.js/1.4.8/processing.min.js"></script> 
+  <script>
+ 
+  var programCode = function(processingInstance) {
+    with (processingInstance) {
+     
+      frameRate(60);
+        
+      // Paste code from Khan Academy here:
+      var timeDelay = 0;
+var gravityState = false;
+var pipes = [0,0,0,0,0];
+var scoreText = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty","twenty one","twenty two", "twenty three", "twenty four", "twenty five","twenty six","twenty seven", "twenty eight", "twenty nine","thirty","thirty one", "thirty two", "thirty three","thirty four", "thirty five", "thirty six", "thirty seven", "thirty eight", "thirty nine", "forty","forty one","forty two","forty three","forty four","forty five","forty six","forty seven","forty eight", "forty nine", "fifty"];
+var score = 0;
+var backgroundSpeed = 5;
+var wingY = 0;
+var titleScreen = true;
+var titleOpacity =255;
+
+var bird = function(x,y,m){
+    this.position = new PVector(x,y);
+    this.velocity = new PVector(0,0);
+    this.acceleration = new PVector(0,0);
+    this.mass = m;
+};
+bird.prototype.display = function(){
+    fill(255, 0, 0);
+
+    fill(230, 230, 5);
+    arc(this.position.x+this.mass*25,this.position.y -this.mass * 5,this.mass*100,this.mass*30,4.712388,6.28318);
+    fill(255, 196, 0);
+    arc(this.position.x+this.mass*25,this.position.y -this.mass * 5,this.mass*50,this.mass*30,0,1.570796);
+    fill(0,0,0);
+    rect(this.position.x,this.position.y-this.mass * 10, this.mass * 25, this.mass *50,10);
+    triangle(this.position.x + this.mass * 10,this.position.y + this.mass *0,this.position.x + this.mass * 10,this.position.y + this.mass *30,this.position.x - this.mass * 20,this.position.y + this.mass *30 + wingY);
+     arc(this.position.x+this.mass*25,this.position.y,this.mass*50,this.mass*50,3.1415926,4.712388);
+     
+     fill(255,255,255);
+     rect(this.position.x + this.mass*15,this.position.y-this.mass * 5, this.mass * 10, this.mass *40,10);
+     arc(this.position.x+this.mass*25,this.position.y,this.mass*40,this.mass*40,1.570796,4.712388);
+     fill(0, 0, 0);
+     ellipse(this.position.x + this.mass*18,this.position.y - this.mass * 12,this.mass * 9, this.mass * 9);
+     fill(255,255,255);
+     ellipse(this.position.x + this.mass*19,this.position.y - this.mass * 12,this.mass * 3, this.mass * 3);
+     fill(0, 0, 0);
+     triangle(this.position.x + this.mass * 1.5,this.position.y + this.mass *35,this.position.x - this.mass * 10,this.position.y + this.mass *50,this.position.x + this.mass * 25,this.position.y + this.mass *35);
+     fill(181, 103, 26);
+     quad(this.position.x + this.mass * 15,this.position.y + this.mass * 40,this.position.x + this.mass * 30,this.position.y + this.mass*50,this.position.x + this.mass*40 ,this.position.y + this.mass * 50,this.position.x+ this.mass * 20,this.position.y + this.mass * 35);
+
+    if(this.velocity.y > 0){
+    wingY=this.mass * 5;
+    } else{
+        wingY=-this.mass * 35;
+    }
+    
+   
+};
+bird.prototype.applyForce = function(force){
+    var f = PVector.div(force, this.mass);
+    this.acceleration.add(f);
+};
+bird.prototype.update = function(){
+    this.velocity.add(this.acceleration);
+    this.position.add(this.velocity);
+    this.acceleration.mult(0);
+};
+bird.prototype.floorCollide = function(){
+    if(this.position.y + this.mass * 50 >= height){
+        this.position.y = 300;
+        this.velocity.y = 0;
+        this.acceleration.y = 0;
+        gravityState = false;
+        score = 0;
+    }
+};
+
+var pipe = function(x,y,h){
+    this.position = new PVector(x,y);
+    this.velocity = new PVector(0,0);
+    this.width = width;
+    this.height = h;
+};
+pipe.prototype.display= function(){
+    fill(87, 62, 24);
+    strokeWeight(2);
+    stroke(66, 44, 6);
+    rect(this.position.x, -10, 50, this.position.y+10,10);
+    rect(this.position.x, this.position.y+this.height, 50, height - this.position.y,10);
+    noStroke();
+    fill(128, 83, 23);
+    rect(this.position.x + 10,this.position.y + this.height , 40, height - this.position.y ,10);
+    rect(this.position.x + 10, -10, 40, this.position.y+10,10);
+    fill(176, 123, 55);
+    rect(this.position.x + 30,this.position.y + this.height , 20, 60 ,10);
+    rect(this.position.x + 30, this.position.y - 60, 20, 40,10);
+    textSize(30);
+    fill(255, 255, 255);
+    text(score,this.position.x + 10,this.position.y +this.height/2);
+    textSize(15);
+    textAlign(CENTER, TOP);
+    text(scoreText[score],this.position.x+10,this.position.y +this.height/2 + 30);
+    fill(255, 255, 255);
+    
+};
+pipe.prototype.move = function(){
+    if(gravityState === true){
+        this.velocity.x = -3;
+        this.position.x += this.velocity.x;
+    }
+    
+};
+
+var drawPipe = function(num){
+    for(var i = 0; i < num; i++){
+        pipes[i] = new pipe(width- 50 + (400 * i), random(0,200), 250); 
+        pipes[i].display();
+    }
+};
+
+
+var bigBird = new bird(100,300,0.5);
+var weight = new PVector(0, 0.5*bigBird.mass);
+var jumpF = new PVector(0, -10*bigBird.mass);
+var restart = function(){
+    score = 0;
+    bigBird.position.y = (300);
+    gravityState = false;
+    bigBird.velocity.y = 0;
+    for(var i = 0; i < pipes.length; i++){
+        pipes[i].height =250;
+    }
+};
+var movePipe = function(num){
+   
+    for(var i = 0; i < num; i++){
+        if(pipes[i].position.x + 50 <0){
+            pipes[i].position.x = 2000;
+            pipes[i].position.y = random(0, 400);
+                if(pipes[i].height <= 130){
+                    pipes[i].height = 130;
+                } else{
+                    pipes[i].height = 250 - 4*score;
+                }
+            }
+        if(gravityState === true){
+        pipes[i].velocity.x = -4;
+        pipes[i].position.x +=pipes[i].velocity.x;
+        // This if statement determines if the user passes a              pipe
+            if(pipes[i].position.x + 50 >= bigBird.position.x &&              pipes[i].position.x + 50 <= bigBird.position.x+2){
+                score++;
+            }
+            if((bigBird.position.y - bigBird.mass * 25 <= pipes[i].position.y &&    bigBird.position.x + (bigBird.mass * 77) >= pipes[i] .position.x && bigBird.position.x <= pipes[i]        .position.x + 50) ||(bigBird.position.y + bigBird.mass * 50 >= pipes[i].position.y + pipes[i].height && bigBird.position.x + (bigBird.mass * 77) >= pipes[i].position.x && bigBird.position.x <= pipes[i].position                .x + 50)   ){
+                restart();
+            }
+        } else{
+            pipes[i].position.x = ((width - 50)+(400*i));
+        }
+        pipes[i].display();
+        
+    }
+};
+var drawBackground = function(x){
+    
+    for(var i = 0; i < 10; i++){
+        
+        fill(105, 75, 34);
+        rect((i * 600/10) + x, 0, 600/10.5,height);
+    }
+    noStroke();
+    fill(0, 143, 36);
+    ellipse(100 + x,height,300,270);
+    ellipse(400 + x,height,500,300);
+    fill(17, 194, 17);
+    
+    ellipse(400 + x, height-30, 430,180);
+    ellipse(80 + x, height, 300,220);
+     fill(7, 97, 29);
+    ellipse(0 + x,0,300,200);
+    ellipse(200 + x,70,300,200);
+    ellipse(400 + x,30,300,200);
+    ellipse(600 + x,0,300,200);
+     fill(17, 194, 17);
+    ellipse(0 + x,0,200,150);
+    ellipse(200 + x,40,300,150);
+    ellipse(400 + x,0,300,200);
+    ellipse(600 + x,0,300,140);
+     fill(96, 232, 96);
+    ellipse(0 + x,0,200,110);
+    ellipse(200 + x,30,300,100);
+    ellipse(400 + x,0,300,120);
+    ellipse(600 + x,0,300,100);
+    
+    
+    
+     fill(250, 250, 250);
+};
+var moveBackground = function(){
+    background(66, 52, 10);
+    drawBackground(backgroundSpeed);
+    drawBackground(600 + backgroundSpeed);
+    drawBackground(1200 + backgroundSpeed);
+    drawBackground(1800 + backgroundSpeed);
+    if(gravityState === true){
+        backgroundSpeed -=1;
+        if(backgroundSpeed <= -600){
+            backgroundSpeed =0;
+        }
+    }else{
+        backgroundSpeed =0;
+    }
+};
+var displayTitleScreen = function(){
+    rectMode(CENTER);
+    fill(0, 0, 0,titleOpacity);
+    rect(width/2 + 10,height/2+10,width/2,height/3,20);
+    fill(255, 255, 255,titleOpacity);
+    rect(width/2,height/2,width/2,height/3,20);
+    var f = createFont("fantasy");
+    textFont(f);
+    fill(65, 143, 4,titleOpacity);
+    textSize(20);
+    textAlign(CENTER);
+    text("Welcome to Tucan fly. Click or press space to begin flying", width/3.3, height/2.5,width/2.5,100);
+    rect(width/2,3*height/5,width/3,height/9,20);
+    fill(255, 255, 255,titleOpacity);
+    textSize(30);
+    text("Play Now", width/3, 2*height/3.5,width/3,100);
+    rectMode(CORNER);
+};
+
+
+drawPipe(pipes.length);
+
+draw = function() {
+    size(window.innerWidth,window.innerHeight);
+    moveBackground();
+    displayTitleScreen();
+    if(titleScreen === false){
+    titleOpacity-=10;
+    }
+    if(titleScreen === false && titleOpacity <=-100){
+    bigBird.display();
+    bigBird.floorCollide();
+    if(gravityState === true){
+    bigBird.applyForce(weight);
+    }
+    
+    bigBird.update();
+    movePipe(pipes.length);
+    
+    fill(0, 0, 0);
+    
+    fill(255,255,255);
+    }
+};
+
+keyPressed = function(){
+    if(titleScreen === false){
+    if(key.code === 32){
+            gravityState = true;
+            bigBird.velocity.y = 0;
+            bigBird.applyForce(jumpF);
+            
+            
+    }
+    }
+};
+
+mousePressed =function(){
+    if(titleScreen === false){
+            gravityState = true;
+            bigBird.velocity.y = 0;
+            bigBird.applyForce(jumpF);
+    }
+    if(titleScreen === true){
+        if((mouseX >=width/2 - width/6) && (mouseY >= 3 * height/5 - height/18) && (mouseX <= width/2 + width/6) && (mouseY <= 3 * height/5 + height/18)){
+                    titleScreen = false;    
+        }
+    }
+};
+    }};
+
+  // Get the canvas that ProcessingJS will use
+  var canvas = document.getElementById("mycanvas");
+  canvas.style.width="100%";
+  canvas.style.position="absolute";
+  canvas.style.top="0px";
+  canvas.style.left="0px"; 
+  // Pass the function to ProcessingJS constructor
+  var processingInstance = new Processing(canvas, programCode); 
+  </script>
+</html>
